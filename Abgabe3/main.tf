@@ -37,7 +37,7 @@ resource "aws_route_table" "public_rt" {
 resource "aws_subnet" "public_subnet" {
   vpc_id                  = aws_vpc.main_vpc.id
   cidr_block              = "10.0.1.0/24"
-  map_public_ip_on_launch = false
+  map_public_ip_on_launch = true
 
   tags = {
     Name = "public_subnet"
@@ -45,12 +45,31 @@ resource "aws_subnet" "public_subnet" {
 }
 
 
+# create a second public subnet in another availability zone
+resource "aws_subnet" "public_subnet_b" {
+  vpc_id                  = aws_vpc.main_vpc.id
+  cidr_block              = "10.0.2.0/24"     # zweiter IP-Bereich
+  map_public_ip_on_launch = true            # Instanzen bleiben hinter dem LB "privat"
+
+  # optional, aber empfehlenswert: AZ explizit setzen
+  availability_zone = "us-east-1b"
+
+  tags = {
+    Name = "public_subnet_b"
+  }
+}
+
 # associate the subnet with the route table
 resource "aws_route_table_association" "rt_assoc" {
   subnet_id      = aws_subnet.public_subnet.id
   route_table_id = aws_route_table.public_rt.id
 }
 
+# associate the second subnet with the same route table
+resource "aws_route_table_association" "rt_assoc_b" {
+  subnet_id      = aws_subnet.public_subnet_b.id
+  route_table_id = aws_route_table.public_rt.id
+}
 
 # create a security group (inbound port 80, outbound all)
 resource "aws_security_group" "web_sg" {
@@ -111,28 +130,37 @@ resource "aws_instance" "web_servers" {
   }
 }
 
-# Create Load Balancer
+# loadbalancer
 resource "aws_lb" "web_lb" {
   name               = "web-load-balancer"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.web_sg.id]
-  subnets            = [aws_subnet.public_subnet.id]
 
-  enable_deletion_protection = false
-  enable_cross_zone_load_balancing = true
+  # hier hängt der ALB in der Security Group – das ist okay,
+  # auch wenn du dieselbe SG wie für die Instanzen verwendest
+  security_groups = [aws_security_group.web_sg.id]
+
+  # wichtig: mindestens zwei Subnetze in verschiedenen AZs
+  subnets = [
+    aws_subnet.public_subnet.id,
+    aws_subnet.public_subnet_b.id
+  ]
+
+  enable_deletion_protection      = false
+  enable_cross_zone_load_balancing = false
 
   tags = {
     Name = "WebLoadBalancer"
   }
 }
 
+
 # Create Target Group
 resource "aws_lb_target_group" "web_tg" {
   name     = "web-tg"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
+  vpc_id   = aws_vpc.main_vpc.id
 
   health_check {
     interval            = 30
@@ -167,6 +195,7 @@ resource "aws_lb_listener" "web_listener" {
     target_group_arn = aws_lb_target_group.web_tg.arn
   }
 }
+
 
 # Output the Load Balancer DNS Name
 output "lb_dns_name" {
