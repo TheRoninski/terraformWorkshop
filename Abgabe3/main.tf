@@ -38,6 +38,7 @@ resource "aws_subnet" "public_subnet" {
   vpc_id                  = aws_vpc.main_vpc.id
   cidr_block              = "10.0.1.0/24"
   map_public_ip_on_launch = true
+  availability_zone       = "us-east-1a"
 
   tags = {
     Name = "public_subnet"
@@ -50,8 +51,6 @@ resource "aws_subnet" "public_subnet_b" {
   vpc_id                  = aws_vpc.main_vpc.id
   cidr_block              = "10.0.2.0/24"     # zweiter IP-Bereich
   map_public_ip_on_launch = true            # Instanzen bleiben hinter dem LB "privat"
-
-  # optional, aber empfehlenswert: AZ explizit setzen
   availability_zone = "us-east-1b"
 
   tags = {
