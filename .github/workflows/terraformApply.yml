@@ -6,7 +6,11 @@ jobs:
     
     permissions:
       contents: read
-      
+
+    defaults:
+      run:
+        working-directory: Abgabe3
+        
     steps:
       - name: Checkout
         uses: actions/checkout@v4
