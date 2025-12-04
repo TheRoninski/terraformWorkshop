@@ -123,5 +123,5 @@ This will remove the EC2 instances, VPC, subnets, security groups, load balancer
 
 ### **License**
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License
 
