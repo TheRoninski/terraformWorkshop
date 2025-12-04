@@ -42,8 +42,8 @@ aws configure
 
 1. Clone this repository to your local machine:
 ```bash
-   git clone https://github.com/yourusername/terraform-aws-infrastructure.git
-   cd terraform-aws-infrastructure
+   git clone https://github.com/TheRoninski/terraformWorkshop.git
+   cd terraformWorkshop
 ```
 
 2. Initialize Terraform:
